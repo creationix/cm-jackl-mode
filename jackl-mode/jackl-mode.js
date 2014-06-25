@@ -25,7 +25,7 @@ CodeMirror.defineMode("jackl", function () {
     "atom: true false null",
     "builtin:def set . index lambda λ if unless ? and or not print list read write exec escape sleep macro concat flat join shuffle",
     "variable:for for* map map* i-map i-map* iter reduce while do",
-    "operator:+ - * / % < <= > >= = !=",
+    "operator:+ - * × / ÷ % < <= ≤ > >= ≥ = != ≠",
   ].forEach(function (line) {
     var pair = line.split(":");
     pair[1].split(" ").forEach(function (id) {
