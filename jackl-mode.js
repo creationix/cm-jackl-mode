@@ -35,7 +35,9 @@ CodeMirror.defineMode("jackl", function () {
 
   return {
     startState: function () {
-      return {};
+      return {
+        indentStack: []
+      };
     },
 
     token: function (stream, state) {
@@ -49,14 +51,20 @@ CodeMirror.defineMode("jackl", function () {
           return type;
         }
       }
-      stream.next();
+      var char = stream.next();
+      if (char === "(" || char === "[" || char === "{") state.indentStack.push(stream.indentation() + 2);
+      if (char === ")" || char === "]" || char === "}") state.indentStack.pop();
     },
 
-    // indent: function (state) {
-    //   return state.stack.length * 2;
-    // },
+    indent: function (state, textAfter) {
+      var match = textAfter.match(/^[)}\]]*$/);
+      var closers = match ? match[0].length : 0;
+      return state.indentStack[state.indentStack.length - 1 - closers]|0;
+    },
 
-    // lineComment: "--"
+    electricInput: /[^\s]$/,
+
+    lineComment: "--"
   };
 });
 
