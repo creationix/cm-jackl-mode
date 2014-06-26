@@ -11,6 +11,18 @@ body {
   overflow: hidden;
 }
 
+/* make notebook transparent */
+.cm-s-notebook.CodeMirror {background-color:rgba(254, 252, 238, 0.8)}
+.cm-s-notebook .CodeMirror-activeline-background,
+.cm-s-notebook .CodeMirror-selected {background: rgba(255,255,255,0.2)}
+.cm-s-notebook.CodeMirror-focused .CodeMirror-selected {background: rgba(255,255,255,0.7)}
+
+.cm-s-notebook-dark.CodeMirror {background-color:rgba(31, 29, 27, 0.8)}
+.cm-s-notebook-dark .CodeMirror-activeline-background,
+.cm-s-notebook-dark .CodeMirror-selected {background: rgba(0,0,0,0.2)}
+.cm-s-notebook-dark.CodeMirror-focused .CodeMirror-selected {background: rgba(0,0,0,0.7)}
+
+
 .window {
   position: absolute;
   overflow: hidden;
