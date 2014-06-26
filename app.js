@@ -1,14 +1,9 @@
 /*global CodeMirror domChanger*/
 "use strict";
 
-var jkl = '-- Inverted question mark!\n(macro (¿ no yes cond)\n  [[:? cond yes no]]\n)\n\n-- Sample output for 3x3 maze\n-- ██████████████\n-- ██      ██  ██\n-- ██  ██████  ██\n-- ██          ██\n-- ██  ██  ██████\n-- ██  ██      ██\n-- ██████████████\n\n(def width 30)\n(def height 30)\n(def size (× width height))\n\n-- Cells point to parent\n(def cells (map (i size) [i null]))\n\n-- Walls flag right and bottom\n(def walls (map (i size) [true true]))\n\n-- Define the sequence of index and right/left\n(def ww (- width 1))\n(def hh (- height 1))\n(def sequence (shuffle (concat\n  (map (i size)\n    (if (< (% i width) ww) [true i])\n  )\n  (map (i size)\n    (if (< (÷ i width) hh) [false i])\n  )\n)))\n\n-- Find the root of a set cell -> cell\n(def (find-root cell)\n  (? (. cell 1) (find-root (. cell 1)) cell)\n)\n\n(for (item sequence)\n  (def i (. item 1))\n  (def root (find-root (. cells i)))\n  (def other (find-root (. cells (+ i (? (. item 0) 1 width)))))\n  (if (≠ (. root 0) (. other 0))\n    (. root 1 other)\n    (. (. walls i) (? (. item 0) 0 1) false)\n  )\n)\n\n(def w (× width 2))\n(def h (× height 2))\n(join "\\n" (map (y (+ h 1))\n  (join "" (map (x (+ w 1))\n    (¿ "  " "██" (or\n      -- Four outer edges are always true\n      (= x 0) (= y 0) (= x w) (= y h)\n      -- Inner cells are more complicated\n      (? (% y 2)\n        (? (% x 2)\n           -- cell middle\n          false\n          -- cell right\n          (. (. walls (+ (÷ (- x 1) 2) (× (÷ y 2) width))) 0)\n        )\n        (? (% x 2)\n          -- cell bottom\n          (. (. walls (+ (÷ x 2) (× (÷ (- y 1) 2) width))) 1)\n          -- cell corner\n          true\n        )\n      )\n    ))\n  ))\n))\n';
+var jkl = '-- Inverted question mark!\n(macro (¿ no yes cond)\n  [[:? cond yes no]]\n)\n\n-- Sample output for 3x3 maze\n\n-- ██████████████\n-- ██      ██  ██\n-- ██  ██████  ██\n-- ██          ██\n-- ██  ██  ██████\n-- ██  ██      ██\n-- ██████████████\n\n(def width 30)\n(def height 30)\n(def size (× width height))\n\n-- Cells point to parent\n(def cells (map (i size) [i null]))\n\n-- Walls flag right and bottom\n(def walls (map (i size) [true true]))\n\n-- Define the sequence of index and right/left\n(def ww (- width 1))\n(def hh (- height 1))\n(def sequence (shuffle (concat\n  (map (i size)\n    (if (< (% i width) ww) [true i])\n  )\n  (map (i size)\n    (if (< (÷ i width) hh) [false i])\n  )\n)))\n\n-- Find the root of a set cell -> cell\n(def (find-root cell)\n  (? (. cell 1) (find-root (. cell 1)) cell)\n)\n\n(for (item sequence)\n  (def i (. item 1))\n  (def root (find-root (. cells i)))\n  (def other (find-root (. cells (+ i (? (. item 0) 1 width)))))\n  (if (≠ (. root 0) (. other 0))\n    (. root 1 other)\n    (. (. walls i) (? (. item 0) 0 1) false)\n  )\n)\n\n(def w (× width 2))\n(def h (× height 2))\n(join "\\n" (map (y (+ h 1))\n  (join "" (map (x (+ w 1))\n    (¿ "  " "██" (or\n      -- Four outer edges are always true\n      (= x 0) (= y 0) (= x w) (= y h)\n      -- Inner cells are more complicated\n      (? (% y 2)\n        (? (% x 2)\n           -- cell middle\n          false\n          -- cell right\n          (. (. walls (+ (÷ (- x 1) 2) (× (÷ y 2) width))) 0)\n        )\n        (? (% x 2)\n          -- cell bottom\n          (. (. walls (+ (÷ x 2) (× (÷ (- y 1) 2) width))) 1)\n          -- cell corner\n          true\n        )\n      )\n    ))\n  ))\n))\n';
 
-var windows = [
-  { title: "bananas/samples/maze.jkl", code: jkl, mode: "jackl" }
-];
-
-var d = domChanger(Desktop, document.body);
-d.update(windows);
+domChanger(Desktop, document.body).update();
 
 function Desktop(emit, refresh) {
   var isDark = false;
@@ -16,8 +11,19 @@ function Desktop(emit, refresh) {
   window.addEventListener("resize", onResize);
   var width = window.innerWidth;
   var height = window.innerHeight;
+  var windows = [
+    { title: "bananas/samples/maze.jkl", code: jkl, mode: "jackl" }
+  ];
 
-  return { render: render };
+  return {
+    render: render,
+    on: { destroy: onWindowDestroy }
+  };
+
+  function onWindowDestroy(id) {
+    windows.splice(windows.indexOf(id), 1);
+    refresh();
+  }
 
   function onResize(evt) {
     if (window.innerWidth !== width || window.innerHeight !== height) {
@@ -35,7 +41,7 @@ function Desktop(emit, refresh) {
     }
   }
 
-  function render(windows) {
+  function render() {
     return windows.map(function (props) {
       return [AppWindow, width, height, isDark, props.title,
         [CodeMirrorEditor, isDark, props]
@@ -46,13 +52,24 @@ function Desktop(emit, refresh) {
 
 function AppWindow(emit, refresh) {
   var width, height, left, top;
+  var maximized = false;
   var dragging = false;
+  var id;
   window.addEventListener("mouseup", onMouseUp);
   window.addEventListener("mousemove", onMouseMove);
 
-  return { render: render };
+  return {
+    render: render,
+    cleanup: cleanup
+  };
+
+  function cleanup() {
+    window.removeEventListener("mouseup", onMouseUp);
+    window.removeEventListener("mousemove", onMouseMove);
+  }
 
   function render(windowWidth, windowHeight, isDark, title, child) {
+    id = child;
 
     if (width === undefined) {
       width = (windowWidth / 2) | 0;
@@ -86,14 +103,21 @@ function AppWindow(emit, refresh) {
     width = right - left;
     height = bottom - top;
 
-    var style = {
+    var style = maximized ? {
+      top: "-5px",
+      left: "-5px",
+      right: "-5px",
+      bottom: "-5px"
+    } : {
       width: width + "px",
       height: height + "px",
       left: left + "px",
       top: top + "px",
     };
-    return ["dialog.window", { style: style, class: isDark ? "dark" : "light"},
-      [".content", child],
+    return ["dialog.window", {
+        style: style, class: isDark ? "dark" : "light"
+      },
+      ["article.content", child],
       [".resize.n", drag(north)],
       [".resize.ne", drag(northEast)],
       [".resize.e", drag(east)],
@@ -103,8 +127,20 @@ function AppWindow(emit, refresh) {
       [".resize.w", drag(west)],
       [".resize.nw", drag(northWest)],
       [".title-bar", drag(titleBar), title],
-      [".close-box", "✖"]
+      [".max-box", {onclick:onMaxClick}, maximized ? "▼" : "▲"],
+      [".close-box", {onclick:onCloseClick},"✖"],
     ];
+  }
+
+  function onMaxClick(evt) {
+    evt.stopPropagation();
+    maximized = !maximized;
+    refresh();
+  }
+
+  function onCloseClick(evt) {
+    evt.stopPropagation();
+    emit("destroy", id);
   }
 
   function onMouseMove(evt) {
