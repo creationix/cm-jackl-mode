@@ -14,7 +14,13 @@ body {
 .window {
   position: absolute;
   overflow: hidden;
+}
+
+.window.light {
   box-shadow: 0 0 7px rgba(0,0,0,0.5);
+}
+.window.dark {
+  box-shadow: 0 0 7px rgba(255,255,255,0.5);
 }
 
 .CodeMirror {
@@ -35,8 +41,15 @@ body {
   right: 5px;
   bottom: 5px;
 }
+.light .title-bar, .light .close-box {
+  background-color: #fff;
+  color: #000;
+}
+.dark .title-bar, .dark .close-box {
+  background-color: #000;
+  color: #fff;
+}
 .title-bar {
-  opacity: 0.5;
   -webkit-user-select: none;
   user-select: none;
   position: absolute;
@@ -45,7 +58,6 @@ body {
   left: 5px;
   right: 25px;
   height: 20px;
-  background-color: #fff;
   text-align: center;
   line-height: 20px;
   font-family: sans-serif;
@@ -53,8 +65,6 @@ body {
   cursor: move;
 }
 .close-box {
-  opacity: 0.5;
-  background-color: #f20;
   -webkit-user-select: none;
   user-select: none;
   position: absolute;
@@ -67,14 +77,20 @@ body {
   line-height: 20px;
   cursor: pointer;
 }
+.close-box, .title-bar {
+  opacity: 0.6;
+}
 .close-box:hover {
-  opacity: 1.0;
+  color: #f00;
 }
 .resize {
   position: absolute;
 }
-.resize:hover {
+.light .resize:hover {
   background-color: rgba(0,0,0,0.2);
+}
+.dark .resize:hover {
+  background-color: rgba(255,255,255,0.2);
 }
 .resize.n, .resize.ne, .resize.nw, .resize.s, .resize.se, .resize.sw {
   height: 5px;
