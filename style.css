@@ -1,28 +1,112 @@
-body {
-  background-color: #888;
-  margin: 0;
-  display: flex;
+html, body {
   height: 100%;
-  width: 100%;
+}
+body {
+  background-color: #666;
+  margin: 0;
+  background: url(wallpaper.jpg);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  overflow: hidden;
+}
+
+.window {
+  position: absolute;
+  overflow: hidden;
+  box-shadow: 0 0 7px rgba(0,0,0,0.5);
+}
+
+.CodeMirror {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
+  height: auto;
+  width: auto;
 }
-#light, #dark {
-  width: 100%;
-  height: 100%;
-  min-height: 400px;
-  flex: 1;
+
+.content {
+  position: absolute;
+  overflow: auto;
+  top: 25px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
 }
-@media (max-width: 1400px) {
-  body {
-    flex-direction: column;
-  }
+.title-bar {
+  opacity: 0.5;
+  -webkit-user-select: none;
+  user-select: none;
+  position: absolute;
+  overflow: hidden;
+  top: 5px;
+  left: 5px;
+  right: 25px;
+  height: 20px;
+  background-color: #fff;
+  text-align: center;
+  line-height: 20px;
+  font-family: sans-serif;
+  text-overflow: ellipsis;
+  cursor: move;
 }
-@media (min-width: 1400px) {
-  body {
-    flex-direction: row;
-  }
+.close-box {
+  opacity: 0.5;
+  background-color: #f20;
+  -webkit-user-select: none;
+  user-select: none;
+  position: absolute;
+  overflow: hidden;
+  right: 5px;
+  top: 5px;
+  height: 20px;
+  width: 20px;
+  text-align: center;
+  line-height: 20px;
+  cursor: pointer;
 }
+.close-box:hover {
+  opacity: 1.0;
+}
+.resize {
+  position: absolute;
+}
+.resize:hover {
+  background-color: rgba(0,0,0,0.2);
+}
+.resize.n, .resize.ne, .resize.nw, .resize.s, .resize.se, .resize.sw {
+  height: 5px;
+}
+.resize.n, .resize.ne, .resize.nw {
+  top: 0;
+}
+.resize.s, .resize.se, .resize.sw {
+  bottom: 0;
+}
+.resize.ne, .resize.e, .resize.se, .resize.sw, .resize.w, .resize.nw {
+  width: 5px;
+}
+.resize.ne, .resize.e, .resize.se {
+  right: 0;
+}
+.resize.sw, .resize.w, .resize.nw {
+  left: 0;
+}
+.resize.n, .resize.s {
+  left: 5px;
+  right: 5px;
+}
+.resize.w, .resize.e {
+  top: 5px;
+  bottom: 5px;
+}
+.resize.n {cursor: n-resize}
+.resize.ne{cursor: ne-resize}
+.resize.e {cursor: e-resize}
+.resize.se{cursor: se-resize}
+.resize.s {cursor: s-resize}
+.resize.sw{cursor: sw-resize}
+.resize.w{cursor: w-resize}
+.resize.nw{cursor: nw-resize}
