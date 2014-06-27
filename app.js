@@ -56,10 +56,17 @@ function AppWindow(emit, refresh) {
   var maximized = false;
   var dragging = {};
   var id;
-  window.addEventListener("mouseup", onMouseUp);
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("touchend", onTouchEnd);
-  window.addEventListener("touchmove", onTouchMove);
+  var usePointer = !!window.PointerEvent;
+  if (usePointer) {
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointermove", onPointerMove);
+  }
+  else {
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchmove", onTouchMove);
+  }
 
   var northProps = drag(north);
   var northEastProps = drag(northEast);
@@ -77,10 +84,16 @@ function AppWindow(emit, refresh) {
   };
 
   function cleanup() {
-    window.removeEventListener("mouseup", onMouseUp);
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("touchend", onTouchEnd);
-    window.removeEventListener("touchmove", onTouchMove);
+    if (usePointer) {
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointermove", onPointerMove);
+    }
+    else {
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchmove", onTouchMove);
+    }
   }
 
   function render(windowWidth, windowHeight, isDark, title, child) {
@@ -126,6 +139,7 @@ function AppWindow(emit, refresh) {
     } : {
       width: width + "px",
       height: height + "px",
+      transform: "translate3d(" + left + "px," + top + "px,0)",
       webkitTransform: "translate3d(" + left + "px," + top + "px,0)",
       // left: left + "px",
       // top: top + "px",
@@ -157,6 +171,22 @@ function AppWindow(emit, refresh) {
   function onCloseClick(evt) {
     evt.stopPropagation();
     emit("destroy", id);
+  }
+
+  function onPointerMove(evt) {
+    var id = evt.pointerId;
+    if (!dragging[id]) return;
+    evt.preventDefault();
+    evt.stopPropagation();
+    move(id, evt.clientX, evt.clientY);
+  }
+
+  function onPointerUp(evt) {
+    var id = evt.pointerId;
+    if (!dragging[id]) return;
+    evt.preventDefault();
+    evt.stopPropagation();
+    stop(id);
   }
 
   function onTouchMove(evt) {
@@ -206,10 +236,20 @@ function AppWindow(emit, refresh) {
   }
 
   function drag(fn) {
-    return {
+    return usePointer ? {
+      onpointerdown: onPointerDown
+    } : {
       onmousedown: onMouseDown,
       ontouchstart: onTouchStart
     };
+
+    function onPointerDown(evt) {
+      var id = evt.pointerId;
+      if (dragging[id]) return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      start(id, evt.clientX, evt.clientY, fn);
+    }
 
     function onTouchStart(evt) {
       var found = false;
@@ -304,40 +344,39 @@ function AppWindow(emit, refresh) {
 }
 
 function CodeMirrorEditor() {
-  // var code, mode, theme;
-  // var el;
-  // var cm = new CodeMirror(function (root) {
-  //   el = root;
-  // }, {
-  //   keyMap: "sublime",
-  //   // lineNumbers: true,
-  //   rulers: [{ column: 80 }],
-  //   autoCloseBrackets: true,
-  //   matchBrackets: true,
-  //   showCursorWhenSelecting: true,
-  //   styleActiveLine: true,
-  // });
-  // setTimeout(function () {
-  //   cm.refresh();
-  // }, 0);
+  var code, mode, theme;
+  var el;
+  var cm = new CodeMirror(function (root) {
+    el = root;
+  }, {
+    keyMap: "sublime",
+    // lineNumbers: true,
+    rulers: [{ column: 80 }],
+    autoCloseBrackets: true,
+    matchBrackets: true,
+    showCursorWhenSelecting: true,
+    styleActiveLine: true,
+  });
+  setTimeout(function () {
+    cm.refresh();
+  }, 0);
 
   return { render: render };
 
   function render(isDark, props) {
-    // var newTheme = isDark ? "notebook-dark" : "notebook";
-    // if (newTheme !== theme) {
-    //   theme = newTheme;
-    //   cm.setOption("theme", theme);
-    // }
-    // if (props.mode !== mode) {
-    //   mode = props.mode;
-    //   cm.setOption("mode", mode);
-    // }
-    // if (props.code !== code) {
-    //   code = props.code;
-    //   cm.setValue(code);
-    // }
-    // return el;
-    return [];
+    var newTheme = isDark ? "notebook-dark" : "notebook";
+    if (newTheme !== theme) {
+      theme = newTheme;
+      cm.setOption("theme", theme);
+    }
+    if (props.mode !== mode) {
+      mode = props.mode;
+      cm.setOption("mode", mode);
+    }
+    if (props.code !== code) {
+      code = props.code;
+      cm.setValue(code);
+    }
+    return el;
   }
 }
