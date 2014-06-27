@@ -53,10 +53,12 @@ function Desktop(emit, refresh) {
 function AppWindow(emit, refresh) {
   var width, height, left, top;
   var maximized = false;
-  var dragging = false;
+  var dragging = {};
   var id;
   window.addEventListener("mouseup", onMouseUp);
   window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("touchend", onTouchEnd);
+  window.addEventListener("touchmove", onTouchMove);
 
   return {
     render: render,
@@ -66,6 +68,8 @@ function AppWindow(emit, refresh) {
   function cleanup() {
     window.removeEventListener("mouseup", onMouseUp);
     window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("touchend", onTouchEnd);
+    window.removeEventListener("touchmove", onTouchMove);
   }
 
   function render(windowWidth, windowHeight, isDark, title, child) {
@@ -104,10 +108,10 @@ function AppWindow(emit, refresh) {
     height = bottom - top;
 
     var style = maximized ? {
-      top: "-5px",
-      left: "-5px",
-      right: "-5px",
-      bottom: "-5px"
+      top: "-10px",
+      left: "-10px",
+      right: "-10px",
+      bottom: "-10px"
     } : {
       width: width + "px",
       height: height + "px",
@@ -143,36 +147,99 @@ function AppWindow(emit, refresh) {
     emit("destroy", id);
   }
 
+  function onTouchMove(evt) {
+    var found = false;
+    for (var i = 0; i < evt.changedTouches.length; i++) {
+      var touch = evt.changedTouches[i];
+      var id = touch.identifier;
+      if (dragging[id]) {
+        found = true;
+        move(id, touch.clientX, touch.clientY);
+      }
+    }
+    if (found) {
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+  }
+
+  function onTouchEnd(evt) {
+    var found = false;
+    for (var i = 0; i < evt.changedTouches.length; i++) {
+      var touch = evt.changedTouches[i];
+      var id = touch.identifier;
+      if (dragging[id]) {
+        found = true;
+        stop(id);
+      }
+    }
+    if (found) {
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+  }
+
   function onMouseMove(evt) {
-    if (!dragging) return;
+    if (!dragging.mouse) return;
     evt.preventDefault();
     evt.stopPropagation();
-    var x = evt.x;
-    var y = evt.y;
-    dragging.fn(x - dragging.x, y - dragging.y);
-    dragging.x = x;
-    dragging.y = y;
+    move("mouse", evt.clientX, evt.clientY);
   }
 
   function onMouseUp(evt) {
-    if (!dragging) return;
+    if (!dragging.mouse) return;
     evt.preventDefault();
     evt.stopPropagation();
-    dragging = false;
+    stop("mouse");
   }
 
   function drag(fn) {
-    return { onmousedown: onMouseDown };
+    return {
+      onmousedown: onMouseDown,
+      ontouchstart: onTouchStart
+    };
+
+    function onTouchStart(evt) {
+      var found = false;
+      for (var i = 0; i < evt.changedTouches.length; i++) {
+        var touch = evt.changedTouches[i];
+        var id = touch.identifier;
+        if (!dragging[id]) {
+          found = true;
+          start(id, touch.clientX, touch.clientY, fn);
+        }
+      }
+      if (found) {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+    }
+
     function onMouseDown(evt) {
-      if (dragging) return;
+      if (dragging.mouse) return;
       evt.preventDefault();
       evt.stopPropagation();
-      dragging = {
-        x: evt.x,
-        y: evt.y,
-        fn: fn
-      };
+      start("mouse", evt.clientX, evt.clientY, fn);
     }
+  }
+
+  function start(id, x, y, fn) {
+    dragging[id] = {
+      x: x,
+      y: y,
+      fn: fn
+    };
+  }
+
+  function move(id, x, y) {
+    var data = dragging[id];
+    data.fn(x - data.x, y - data.y);
+    data.x = x;
+    data.y = y;
+  }
+
+  function stop(id) {
+    dragging[id] = null;
   }
 
   function north(dx, dy) {
@@ -238,6 +305,9 @@ function CodeMirrorEditor() {
     showCursorWhenSelecting: true,
     styleActiveLine: true,
   });
+  setTimeout(function () {
+    cm.refresh();
+  }, 0);
 
   return { render: render };
 
@@ -255,9 +325,6 @@ function CodeMirrorEditor() {
       code = props.code;
       cm.setValue(code);
     }
-    setTimeout(function () {
-      cm.refresh();
-    }, 0);
     return el;
   }
 }
